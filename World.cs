@@ -26,6 +26,7 @@ namespace LeyStoneGame
     {
         Player,
         Visual,
+        Projectile,
         Coin,
         Tentacle,
         TentacleSpawner
@@ -43,12 +44,12 @@ namespace LeyStoneGame
         PrimitivePolygon backPlate;
         public World(Vector2 size) : base(size)
         {
-            lines.Add(new Line(new Node(new Vector2(64, 256)), new Node(new Vector2(256, 256)), true));
-            lines.Add(new Line(new Node(new Vector2(256, 256)), new Node(new Vector2(512, 320)), true));
-            lines.Add(new Line(new Node(new Vector2(512, 320)), new Node(new Vector2(768, 320)), true));
+            lines.Add(new Line(new Vector2(64, 256), new Vector2(256, 256), true));
+            lines.Add(new Line(new Vector2(256, 256), new Vector2(512, 320), true));
+            lines.Add(new Line(new Vector2(512, 320), new Vector2(768, 320), true));
 
-            lines.Add(new Line(new Node(new Vector2(256, 128)), new Node(new Vector2(64, 128)), true));
-            lines.Add(new Line(new Node(new Vector2(64, 128)), new Node(new Vector2(64, 256)), true));
+            lines.Add(new Line(new Vector2(256, 128), new Vector2(64, 128), true));
+            lines.Add(new Line(new Vector2(64, 128), new Vector2(64, 256), true));
             player = new Player(new Vector2(65, 16));
             entities.Add(player);
 
@@ -117,11 +118,12 @@ namespace LeyStoneGame
                     entities.Add(new VisualPolygonParticle(new Vector2(320, 128), poly, Main.rand.Next(2, 5))
                             .SetSpin(new Vector2(), (float)Main.rand.NextDouble(0, 360), 2.5f + (float)Main.rand.NextDouble(-.7f, 1f))
                             .SetFade(60, 90 + Main.rand.Next(60), Color.Transparent)
-                            .SetSolid(new PolyRectangle(new Vector2(320, 128), new Vector2(320 + 16, 128 + 16)))
+                            .SetSolid(Polygon2.CreateRectangle(new Vector2(-8), new Vector2(8)))
                             .SetGravityAffected(.1f));
                             //.SetWander((float)Main.rand.NextDouble(.9f, 1.5f), 0, -1, 30, new Vector2(0, 120)));
                 }
-                entities.Add(new Coin(new Vector2(512 + 64, 128 + 64)));
+                entities.Add(new Projectile(player.position, new Vector2(16, 4) * 4, new TextureContainer("bolt", 4, Color.White, 0), -45, 45, 3, 30));
+                //entities.Add(new Coin(new Vector2(512 + 64, 128 + 64)));
                 //entities.Add(new VisualRaySpawner(player.position, 360, new Vector2(5, 15), new Vector2(1, 3), new Vector2(128), new Vector2(2), new Vector2(10, 60), Color.White));
                 //entities.Add(new TentacleSpawner());
             }
@@ -167,9 +169,10 @@ namespace LeyStoneGame
                             default: return null;
                         }
                     }
-                    case 2: return new Coin(position);
-                            case 3: return new Tentacle(Convert.ToBoolean(additionalInformation[0]));
-                            case 4: return new TentacleSpawner();
+                case 2: return null;    //Type Projectile will not be deserializable, too many variables
+                case 3: return new Coin(position);
+                case 4: return new Tentacle(Convert.ToBoolean(additionalInformation[0]));
+                case 5: return new TentacleSpawner();
                 default: return new Player(position);
             }
         }
@@ -185,6 +188,7 @@ namespace LeyStoneGame
             foreach (Background b in backgrounds)
                 b.Draw(this, batch);
 
+            DrawHelper.StartDrawWorldSpace(batch, BlendState.AlphaBlend);
             foreach (Trigger t in triggers)
                 t.DrawDebug(batch);
 
@@ -204,12 +208,13 @@ namespace LeyStoneGame
 
         public void ChangeBackplateColor()
         {
-            Background b = (BackgroundDynamic)backgrounds[0];
+            Background b = (Background)backgrounds[0];
             b.polygons.Clear();
             b.polygons.Add(new PrimitivePolygon(new Vector2[] {
-                    new Vector2(0, Main.HEIGHT), Vector2.Zero, new Vector2(Main.WIDTH, 0), new Vector2(Main.WIDTH, Main.HEIGHT) },
-                new Color[] { colorStart, colorEnd, colorEnd, colorStart }));
-
+                    Main.camera.Position + new Vector2(0, Main.HEIGHT), Main.camera.Position, Main.camera.Position + new Vector2(Main.WIDTH, 0), Main.camera.Position + new Vector2(Main.WIDTH, Main.HEIGHT) },
+                new Color[] { colorStart, colorStart, colorStart, colorStart }));
+            //new Vector2(0, Main.HEIGHT), Vector2.Zero, new Vector2(Main.WIDTH, 0), new Vector2(Main.WIDTH, Main.HEIGHT) },
+            //new Color[] { colorStart, colorEnd, colorEnd, colorStart }));
             //((BackgroundDynamic)backgrounds[0]).SetPolygons();
 
             backgrounds[0].counter = 0;
@@ -222,11 +227,13 @@ namespace LeyStoneGame
             List<PrimitivePolygon> poly = new List<PrimitivePolygon>();
             poly.Add(new PrimitivePolygon(new Vector2[] {
                 new Vector2(0, Main.HEIGHT), Vector2.Zero, new Vector2(Main.WIDTH, 0), new Vector2(Main.WIDTH, Main.HEIGHT) },
-                    new Color[] { colorStart, colorEnd, colorEnd, colorStart }));
+                new Color[] { colorStart, colorEnd, colorEnd, colorStart }));//new Color[] { colorStart, colorEnd, colorEnd, colorStart }));
             //new Color[] { new Color(84, 0, 0), Color.Black, Color.Black, new Color(84, 0, 0) }));
-            backgrounds.Add(new BackgroundDynamic(null, Vector2.Zero, poly, new Action<SpriteBatch, Background>((batch, background) => {
+            backgrounds.Add(new Background(null, Vector2.Zero, poly, new Action<SpriteBatch, Background>((batch, background) => {
             })));
-            backPlate = poly[0];
+            /*backPlate = new PrimitivePolygon(new Vector2[] {
+                new Vector2(0, Main.HEIGHT), Vector2.Zero, new Vector2(Main.WIDTH, 0), new Vector2(Main.WIDTH, Main.HEIGHT) },
+                new Color[] { colorStart, colorStart, colorStart, colorStart});*/
 
             poly = new List<PrimitivePolygon>();
             for (int i = 0; i < 32; i++)
@@ -242,7 +249,7 @@ namespace LeyStoneGame
                 poly.Add(new PrimitivePolygon(new Vector2(randX, randY), randH, 4, Color.White));
             }
             
-            backgrounds.Add(new Background(null, new Vector2(-.05f, 0), poly, new Action<SpriteBatch, Background>((batch, background) => { })));
+            backgrounds.Add(new Background(null, new Vector2(-.025f, 0), poly, new Action<SpriteBatch, Background>((batch, background) => { })));
 
             poly = new List<PrimitivePolygon>();
             poly.Add(new PrimitivePolygon(Vector2.Zero - new Vector2(128, 128 + 16), 512, 25, Color.Orange).SetRandomColors(Color.OrangeRed, Color.DarkOrange));
@@ -258,11 +265,11 @@ namespace LeyStoneGame
 
             poly = new List<PrimitivePolygon>();
             poly.Add(new PrimitivePolygon(new Vector2(400, 1400), 1000, 256, Color.IndianRed));
-            backgrounds.Add(new Background(null, new Vector2(-.5f, 0), poly, new Action<SpriteBatch, Background>((batch, background) => { })));
+            backgrounds.Add(new Background(null, new Vector2(-.125f, 0), poly, new Action<SpriteBatch, Background>((batch, background) => { })).SetSize(new Vector2(800, 600)));
 
             poly = new List<PrimitivePolygon>();
             poly.Add(new PrimitivePolygon(new Vector2(400, 1300), 800, 256, Color.OrangeRed));
-            backgrounds.Add(new Background(null, new Vector2(-1, 0), poly, new Action<SpriteBatch, Background>((batch, background) => { })));
+            backgrounds.Add(new Background(null, new Vector2(-.3f, 0), poly, new Action<SpriteBatch, Background>((batch, background) => { })));
         }
     }
 }

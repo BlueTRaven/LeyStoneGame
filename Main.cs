@@ -91,7 +91,6 @@ namespace LeyStoneGame
                 Exit();
 
             keyboard.Update();
-            mouse.Update();
 
             foreach (Timer t in timers)
                 t.Count();
@@ -110,9 +109,11 @@ namespace LeyStoneGame
             if (!currentGui.stopsWorldInput)
             {
                 camera.Update();
+                mouse.Update();
 
                 if (keyboard.KeyPressed(Keys.P))
-                    World.timeScale.scale = World.timeScale.scale == 0 ? 1 : 0;
+                    paused = !paused;
+                    //World.timeScale.scale = World.timeScale.scale == 0 ? 1 : 0;
 
                 if (!paused || keyboard.KeyPressed(Keys.O))
                 {

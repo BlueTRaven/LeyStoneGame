@@ -29,6 +29,8 @@ namespace LeyStoneGame
             textures.Add("test", manager.Load<Texture2D>("Textures/test"));
             textures.Add("glowMask", manager.Load<Texture2D>("Textures/glowMask"));
 
+            textures.Add("bolt", manager.Load<Texture2D>("Textures/bolt"));
+
             EffectContainer sharpen = new EffectContainer(manager.Load<Effect>("Effects/sharpen"), EffectUse.Pre);
             effectContainers.Add("sharpen", sharpen);
 

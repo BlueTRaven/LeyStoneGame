@@ -50,10 +50,6 @@ namespace LeyStoneGame.Entities
                     float size = (float)Main.rand.NextDouble(4, 10);
                     bool left = Main.rand.NextCoinFlip();
 
-                    /*PrimitivePolygon poly = new PrimitivePolygon(
-                    new Vector2[] { new Vector2(-size), new Vector2(size, -size), new Vector2(size), new Vector2(-size, size) },
-                    new Color[] { Color.White, Color.White, Color.White, Color.White }, new TextureContainer(Main.assets.GetTexture("glowMask"), .25f));*/
-
                     PrimitivePolygon poly = new PrimitivePolygon(
                         new Vector2[] { new Vector2(0), new Vector2(size * 2, 0), new Vector2(size * 2), new Vector2(0, size * 2) },
                         Color.White);
@@ -84,7 +80,6 @@ namespace LeyStoneGame.Entities
                 World w = ((World)world);
                 w.player.moveTimer.Reset(15);
                 w.player.ClearVisualTrail();
-                w.player.TakeDamage(world, this, 30);
                 polygon = new PrimitivePolygon(new Vector2[] { Camera.ToWorldCoords(Main.camera.center), sideMax, sideMin }, new Color[] { Color.White, Color.White, Color.White });
 
                 sideMax = Vector2.Lerp(sideMax, Camera.ToWorldCoords(Main.camera.center), .175f);
